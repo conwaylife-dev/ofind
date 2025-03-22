@@ -80,11 +80,10 @@ static void beNice()
 
 #include <inttypes.h>
 
-typedef uint32_t State;
+typedef int32_t State;
 typedef uint32_t Row;
 
-// STATE_SPACE_SIZE should be smaller than 1<<32
-#define STATE_SPACE_SIZE ((size_t)1<<31)
+#define STATE_SPACE_SIZE (INT32_MAX)
 Row * statespace; /* Will be allocated later. */
 State firstUnprocessedState;
 State firstFreeState;
@@ -359,7 +358,7 @@ static void testCompatible(int phase, int prevRowIndex, int rowIndex, State s)
 	setupExtensions(rows[prevRowIndex],rowOfState(s, prevPhase),rows[rowIndex],-1L);
 	if (03 & extensions[totalWidth - 1]) {	/* path exists? */
 		int i = prevRowIndex - firstRow[prevPhase];
-		b[i>>5] |= 1 << (i&037);
+		b[i>>5] |= ((Row) 1) << (i&037);
 	}
 }
 
@@ -371,7 +370,7 @@ static int compatible(int phase, int prevRowIndex, int rowIndex)
 	if (prevPhase < 0) prevPhase = period - 1;
 	b = compatBits + firstCompat[phase] + (compatBlockLength[phase]*(rowIndex-firstRow[phase]));
 	i = prevRowIndex - firstRow[prevPhase];
-	return b[i>>5] & (1 << (i & 037));
+	return b[i>>5] & (((Row) 1) << (i & 037));
 }
 
 /* ======================================================================= */
@@ -384,7 +383,7 @@ int firstReach[MAXPERIOD];
 
 static long reachable(int phase, int firstRowIndex, int rowIndex) {
 	return reachBits[firstReach[phase] + (rowIndex*REACHLENGTH) + (firstRowIndex>>5)]
-		& (1 << (firstRowIndex & 037));
+		& (((Row) 1) << (firstRowIndex & 037));
 }
 
 static void testReachable()
@@ -398,7 +397,7 @@ static void testReachable()
 		for (j = 0; j < REACHLENGTH; j++) reachBits[i*REACHLENGTH + j] = 0;
 		for (j = 0; j < nRows[0]; j++)
 			if (compatible(0, firstRow[period-1]+i, firstRow[0]+j)) {
-				reachBits[i*REACHLENGTH + (j>>5)] |= (1 << (j & 037));
+				reachBits[i*REACHLENGTH + (j>>5)] |= (((Row)1) << (j & 037));
 			}
 	}
 
@@ -1120,7 +1119,7 @@ static void process(State s)
 /*  Depth first search algorithm  */
 /* ============================== */
 
-#define unused 0
+#define unused -1
 
 static int depthFirst(State s, int numLevels) {
 	State f = firstFreeState;
